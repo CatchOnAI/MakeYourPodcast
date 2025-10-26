@@ -11,13 +11,12 @@ from openai import OpenAI
 import random
 from urllib.parse import urlparse, unquote
 import time 
-from transformers import AutoTokenizer
 import tiktoken
 
 VISIT_SERVER_TIMEOUT = int(os.getenv("VISIT_SERVER_TIMEOUT", 200))
 WEBCONTENT_MAXLENGTH = int(os.getenv("WEBCONTENT_MAXLENGTH", 150000))
 
-JINA_API_KEYS = os.getenv("JINA_API_KEYS", "")
+JINA_API_KEYS = os.getenv("JINA_API_KEYS", "").strip()
 
 
 @staticmethod
@@ -97,9 +96,13 @@ class Visit(BaseTool):
         return response.strip()
         
     def call_server(self, msgs, max_retries=2):
-        api_key = os.environ.get("API_KEY")
-        url_llm = os.environ.get("API_BASE")
-        model_name = os.environ.get("SUMMARY_MODEL_NAME", "")
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        url_llm = "https://openrouter.ai/api/v1"
+        model_name = os.environ.get("SUMMARY_MODEL_NAME", "alibaba/qwen-max")
+        
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY environment variable is not set")
+        
         client = OpenAI(
             api_key=api_key,
             base_url=url_llm,
@@ -109,7 +112,11 @@ class Visit(BaseTool):
                 chat_response = client.chat.completions.create(
                     model=model_name,
                     messages=msgs,
-                    temperature=0.7
+                    temperature=0.7,
+                    extra_headers={
+                        "HTTP-Referer": "https://github.com/QwenLM/DeepResearch",
+                        "X-Title": "DeepResearch",
+                    }
                 )
                 content = chat_response.choices[0].message.content
                 if content:
