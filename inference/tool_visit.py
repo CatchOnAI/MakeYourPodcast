@@ -16,8 +16,6 @@ import tiktoken
 VISIT_SERVER_TIMEOUT = int(os.getenv("VISIT_SERVER_TIMEOUT", 200))
 WEBCONTENT_MAXLENGTH = int(os.getenv("WEBCONTENT_MAXLENGTH", 150000))
 
-JINA_API_KEYS = os.getenv("JINA_API_KEYS", "").strip()
-
 
 @staticmethod
 def truncate_to_tokens(text: str, max_tokens: int = 95000) -> str:
@@ -150,9 +148,12 @@ class Visit(BaseTool):
         max_retries = 3
         timeout = 50
         
+        # Read API key at runtime, not at module import time
+        jina_api_key = os.getenv("JINA_API_KEYS", "").strip()
+        
         for attempt in range(max_retries):
             headers = {
-                "Authorization": f"Bearer {JINA_API_KEYS}",
+                "Authorization": f"Bearer {jina_api_key}",
             }
             try:
                 response = requests.get(
