@@ -49,7 +49,7 @@ class VisitConfig:
     jina_max_retries: int = 3
     jina_retry_delay: float = 0.5
     html_read_max_attempts: int = 8
-    summary_max_retries: int = 1
+    summary_max_retries: int = 3
     parse_max_retries: int = 3
     
     # LLM Configuration
@@ -319,7 +319,10 @@ class Visit(BaseTool):
             Formatted response
         """
         self.logger.debug(f"Processing single URL: {url}")
-        return self._fetch_and_summarize(url, goal)
+        print(f"  → Fetching: {url}")
+        result = self._fetch_and_summarize(url, goal)
+        print(f"  ✓ Completed: {url}")
+        return result
     
     def _process_multiple_urls(self, urls: List[str], goal: str) -> str:
         """
@@ -348,9 +351,11 @@ class Visit(BaseTool):
                 continue
             
             self.logger.debug(f"Processing URL {idx}/{len(urls)}: {url}")
+            print(f"  → [{idx}/{len(urls)}] Fetching: {url}")
             
             cur_response = self._fetch_and_summarize(url, goal)
             responses.append(cur_response)
+            print(f"  ✓ [{idx}/{len(urls)}] Completed: {url}")
         
         total_elapsed = time.time() - start_time
         self.logger.info(f"Batch processing completed: {len(urls)} URLs in {total_elapsed:.2f}s")
@@ -396,6 +401,8 @@ class Visit(BaseTool):
         self.logger.debug(f"Attempting to fetch HTML from: {url}")
         
         for attempt in range(1, self.config.html_read_max_attempts + 1):
+            if attempt > 1:
+                print(f"    ⟳ Retry attempt {attempt}/{self.config.html_read_max_attempts}...")
             self.logger.debug(f"Fetch attempt {attempt}/{self.config.html_read_max_attempts}")
             
             content = self._fetch_via_jina(url)
@@ -472,8 +479,10 @@ class Visit(BaseTool):
         content = truncate_to_tokens(content, max_tokens=self.config.max_tokens)
         self.logger.debug(f"Content truncated to {len(content)} characters")
         
+        print(f"    🤖 Generating summary with LLM...")
         # Try to get summary with progressive truncation
         summary_data = self._extract_with_llm(content, goal, url)
+        print(f"    ✓ Summary generated")
         
         # Parse and format response
         if not summary_data:
@@ -593,6 +602,7 @@ class Visit(BaseTool):
         client = OpenAI(
             api_key=self.config.openrouter_api_key,
             base_url=self.config.llm_base_url,
+            timeout=600.0,
         )
         
         for attempt in range(1, max_retries + 1):
@@ -607,6 +617,15 @@ class Visit(BaseTool):
                     "X-Title": "DeepResearch",
                 }
             )
+            
+            # Validate response structure
+            if not chat_response or not chat_response.choices:
+                self.logger.warning(f"LLM returned invalid response on attempt {attempt}: no choices")
+                continue
+            
+            if not chat_response.choices[0].message:
+                self.logger.warning(f"LLM returned invalid response on attempt {attempt}: no message")
+                continue
             
             content = chat_response.choices[0].message.content
             

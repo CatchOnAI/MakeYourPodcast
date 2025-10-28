@@ -81,15 +81,25 @@ class MultiTurnReactAgent(FnCallAgent):
                     stop=["\n<tool_response>", "<tool_response>"],
                     temperature=self.llm_generate_cfg.get('temperature', 0.6),
                     top_p=self.llm_generate_cfg.get('top_p', 0.95),
-                    max_tokens=10000,
-                    extra_headers={
-                        "HTTP-Referer": "https://github.com/QwenLM/DeepResearch",
-                        "X-Title": "DeepResearch",
-                    }
+                    max_tokens=50_000,
                 )
+                
+                # Check if response is valid
+                if not chat_response.choices or len(chat_response.choices) == 0:
+                    print(f"Error: Attempt {attempt + 1} received empty choices array.")
+                    continue
+                
+                if not chat_response.choices[0].message:
+                    print(f"Error: Attempt {attempt + 1} received message object is None.")
+                    continue
                 
                 # OpenRouter provides reasoning in the message for models that support it
                 content = chat_response.choices[0].message.content
+                
+                # Check if content exists
+                if content is None:
+                    print(f"Error: Attempt {attempt + 1} received content is None.")
+                    continue
                 
                 # Check if reasoning is available (for models that support extended thinking)
                 if hasattr(chat_response.choices[0].message, 'reasoning') and chat_response.choices[0].message.reasoning:
@@ -157,19 +167,37 @@ class MultiTurnReactAgent(FnCallAgent):
                 tool_call = content.split('<tool_call>')[1].split('</tool_call>')[0]
                 try:
                     if "python" in tool_call.lower():
-                        try:
-                            code_raw=content.split('<tool_call>')[1].split('</tool_call>')[0].split('<code>')[1].split('</code>')[0].strip()
-                            result = TOOL_MAP['PythonInterpreter'].call(code_raw)
-                        except:
-                            result = "[Python Interpreter Error]: Formatting error."
+                        print("🐍 Executing Python code...")
+                        code_raw=content.split('<tool_call>')[1].split('</tool_call>')[0].split('<code>')[1].split('</code>')[0].strip()
+                        result = TOOL_MAP['PythonInterpreter'].call(code_raw)
+                        print("✓ Python execution completed")
                     else:
                         tool_call = json5.loads(tool_call)
                         tool_name = tool_call.get('name', '')
                         tool_args = tool_call.get('arguments', {})
+                        
+                        # Show progress for different tools
+                        if tool_name == 'visit':
+                            urls = tool_args.get('url', [])
+                            if isinstance(urls, str):
+                                urls = [urls]
+                            print(f"🌐 Visiting {len(urls)} webpage(s)...")
+                        elif tool_name == 'search':
+                            queries = tool_args.get('query', [])
+                            if isinstance(queries, str):
+                                queries = [queries]
+                            print(f"🔍 Searching for {len(queries)} queries...")
+                        elif tool_name == 'google_scholar':
+                            print(f"📚 Searching Google Scholar...")
+                        else:
+                            print(f"🔧 Calling tool: {tool_name}...")
+                        
                         result = self.custom_call_tool(tool_name, tool_args)
+                        print(f"✓ Tool '{tool_name}' completed")
 
                 except:
                     result = 'Error: Tool call is not a valid JSON. Tool call must contain a valid "name" and "arguments" field.'
+                    print(f"❌ Tool call parsing failed")
                     
                 result = "<tool_response>\n" + result + "\n</tool_response>"
                 messages.append({"role": "user", "content": result})
