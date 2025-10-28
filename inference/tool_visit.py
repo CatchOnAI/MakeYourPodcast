@@ -37,7 +37,7 @@ class VisitConfig:
     # API Configuration
     jina_api_key: Optional[str] = None
     openrouter_api_key: Optional[str] = None
-    summary_model_name: str = "alibaba/qwen-max"
+    summary_model_name: str = "alibaba/tongyi-deepresearch-30b-a3b"
     
     # Timeouts and Limits
     visit_timeout: int = 50

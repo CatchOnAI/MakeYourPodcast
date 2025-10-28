@@ -222,7 +222,7 @@ Environment Variables Required:
     
     # Set default summary model if not set (using OpenRouter Qwen model)
     if not os.getenv("SUMMARY_MODEL_NAME"):
-        os.environ["SUMMARY_MODEL_NAME"] = "alibaba/qwen-max"
+        os.environ["SUMMARY_MODEL_NAME"] = "alibaba/tongyi-deepresearch-30b-a3b"
     
     # Run the research
     run_research(
