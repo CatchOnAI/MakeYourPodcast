@@ -1,119 +1,207 @@
 """
-Standalone script to test Jina API connection
-This helps debug authentication issues
+Enhanced standalone script to test Jina API and Visit tool
+Features:
+- Tests Jina API connection
+- Validates configuration
+- Tests full Visit tool functionality
 """
 
 import os
-import requests
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
+
+# Load environment first
+load_dotenv()
+
+# Import after loading env
+from tool_visit import Visit, VisitConfig
 
 console = Console()
 
-def test_jina_api():
-    """Test Jina API with detailed debugging information"""
+
+def test_configuration():
+    """Test configuration loading and validation"""
+    console.print("\n[bold cyan]📋 Testing Configuration[/bold cyan]\n")
     
-    # Load environment variables
-    load_dotenv()
+    config = VisitConfig.from_env()
     
-    # Get the API key
-    jina_api_key = os.getenv("JINA_API_KEYS", "")
+    # Display configuration
+    table = Table(title="Visit Tool Configuration")
+    table.add_column("Setting", style="cyan")
+    table.add_column("Value", style="green")
     
-    console.print("\n[bold cyan]🔍 Testing Jina API Connection[/bold cyan]\n")
+    table.add_row("Jina API Key", f"{config.jina_api_key[:15]}...{config.jina_api_key[-10:]}" if config.jina_api_key else "❌ NOT SET")
+    table.add_row("OpenRouter API Key", f"{config.openrouter_api_key[:15]}..." if config.openrouter_api_key else "❌ NOT SET")
+    table.add_row("Summary Model", config.summary_model_name)
+    table.add_row("Jina Timeout", f"{config.visit_timeout}s")
+    table.add_row("Max Retries", str(config.jina_max_retries))
+    table.add_row("Debug Logging", "✓" if config.enable_debug_logging else "✗")
+    table.add_row("Log Directory", config.log_dir)
     
-    # Debug: Show API key info (masked for security)
-    if jina_api_key:
-        key_length = len(jina_api_key)
-        key_preview = jina_api_key[:10] + "..." + jina_api_key[-10:] if len(jina_api_key) > 20 else jina_api_key
-        console.print(f"[green]✓[/green] API Key found")
-        console.print(f"  Length: {key_length} characters")
-        console.print(f"  Preview: {key_preview}")
-        console.print(f"  Has leading whitespace: {jina_api_key != jina_api_key.lstrip()}")
-        console.print(f"  Has trailing whitespace: {jina_api_key != jina_api_key.rstrip()}")
-        
-        # Strip whitespace
-        jina_api_key_clean = jina_api_key.strip()
-        console.print(f"  After strip: {len(jina_api_key_clean)} characters\n")
-    else:
-        console.print("[red]✗[/red] JINA_API_KEYS not found in environment!\n")
+    console.print(table)
+    console.print()
+    
+    # Validate
+    config.validate()
+    console.print("[green]✓[/green] Configuration validated successfully!\n")
+    
+    return config
+
+
+def test_jina_direct():
+    """Test Jina API directly"""
+    console.print("[bold cyan]🔍 Testing Direct Jina API Connection[/bold cyan]\n")
+    
+    config = VisitConfig.from_env()
+    
+    if not config.jina_api_key:
+        console.print("[red]✗[/red] Jina API key not found!")
         return False
     
-    # Test URL
+    import requests
+    
     test_url = "https://www.google.com"
     jina_endpoint = f"https://r.jina.ai/{test_url}"
     
-    console.print(f"[bold]Test Request:[/bold]")
-    console.print(f"  Endpoint: {jina_endpoint}")
-    console.print(f"  Method: GET\n")
+    console.print(f"Testing: {test_url}")
+    console.print(f"Endpoint: {jina_endpoint}\n")
     
-    # Make the request
     headers = {
-        "Authorization": f"Bearer {jina_api_key_clean}",
+        "Authorization": f"Bearer {config.jina_api_key}",
     }
     
-    console.print("[bold]Making request...[/bold]\n")
+    response = requests.get(jina_endpoint, headers=headers, timeout=30)
     
-    try:
-        response = requests.get(
-            jina_endpoint,
-            headers=headers,
-            timeout=30
-        )
-        
-        console.print(f"[bold]Response Status:[/bold] {response.status_code}\n")
-        
-        if response.status_code == 200:
-            content = response.text
-            console.print(Panel.fit(
-                f"[bold green]✅ Success![/bold green]\n\n"
-                f"Response length: {len(content)} characters\n"
-                f"First 500 chars:\n\n{content[:500]}...",
-                border_style="green",
-                title="Jina API Test Result"
-            ))
-            return True
-        else:
-            console.print(Panel.fit(
-                f"[bold red]❌ Request Failed[/bold red]\n\n"
-                f"Status Code: {response.status_code}\n"
-                f"Response:\n{response.text}",
-                border_style="red",
-                title="Error Details"
-            ))
-            
-            # Additional debugging
-            console.print("\n[yellow]Debugging Tips:[/yellow]")
-            console.print("1. Verify your API key is valid at https://jina.ai/")
-            console.print("2. Check if the key has expired")
-            console.print("3. Try generating a new API key")
-            console.print("4. Make sure there are no extra spaces in your .env file")
-            
-            return False
-            
-    except requests.exceptions.Timeout:
-        console.print("[red]✗[/red] Request timed out after 30 seconds")
-        return False
-    except requests.exceptions.RequestException as e:
-        console.print(f"[red]✗[/red] Request error: {e}")
-        return False
-    except Exception as e:
-        console.print(f"[red]✗[/red] Unexpected error: {e}")
-        import traceback
-        console.print(traceback.format_exc())
+    if response.status_code == 200:
+        content = response.text
+        console.print(Panel.fit(
+            f"[bold green]✅ Success![/bold green]\n\n"
+            f"Status: {response.status_code}\n"
+            f"Response length: {len(content)} characters\n"
+            f"Preview: {content[:200]}...",
+            border_style="green",
+            title="Jina API Test"
+        ))
+        return True
+    else:
+        console.print(Panel.fit(
+            f"[bold red]❌ Failed[/bold red]\n\n"
+            f"Status: {response.status_code}\n"
+            f"Response: {response.text[:500]}",
+            border_style="red",
+            title="Jina API Error"
+        ))
         return False
 
-def main():
-    """Main entry point"""
-    success = test_jina_api()
+
+def test_visit_tool():
+    """Test the full Visit tool functionality"""
+    console.print("\n[bold cyan]🔧 Testing Visit Tool[/bold cyan]\n")
     
-    if success:
-        console.print("\n[bold green]All tests passed! ✅[/bold green]")
-        console.print("Your Jina API configuration is working correctly.\n")
+    # Initialize Visit tool
+    console.print("Initializing Visit tool...")
+    visit_tool = Visit()
+    console.print("[green]✓[/green] Visit tool initialized\n")
+    
+    # Test single URL
+    console.print("[bold]Test 1: Single URL Visit[/bold]")
+    test_url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
+    test_goal = "Get a brief overview of Python programming language"
+    
+    console.print(f"URL: {test_url}")
+    console.print(f"Goal: {test_goal}\n")
+    
+    params = {
+        "url": test_url,
+        "goal": test_goal
+    }
+    
+    console.print("Fetching and summarizing... (this may take a moment)\n")
+    
+    result = visit_tool.call(params)
+    
+    if result and not result.startswith("[Visit] Failed"):
+        console.print(Panel(
+            result[:500] + "..." if len(result) > 500 else result,
+            title="[green]Visit Tool Result[/green]",
+            border_style="green"
+        ))
+        console.print(f"\n[green]✓[/green] Full response length: {len(result)} characters")
+        return True
     else:
-        console.print("\n[bold red]Tests failed! ❌[/bold red]")
-        console.print("Please fix the issues above before running the main script.\n")
+        console.print(Panel(
+            result[:500] if result else "No response",
+            title="[red]Visit Tool Error[/red]",
+            border_style="red"
+        ))
+        return False
+
+
+def main():
+    """Run all tests"""
+    console.print("\n" + "="*70)
+    console.print("[bold magenta]🧪 Visit Tool Test Suite[/bold magenta]")
+    console.print("="*70)
+    
+    results = {}
+    
+    # Test 1: Configuration
+    results["configuration"] = test_configuration()
+    
+    # Test 2: Direct Jina API
+    results["jina_api"] = test_jina_direct()
+    
+    # Test 3: Full Visit Tool (only if previous tests passed)
+    if results["configuration"] and results["jina_api"]:
+        results["visit_tool"] = test_visit_tool()
+    else:
+        console.print("\n[yellow]⚠[/yellow] Skipping Visit Tool test due to previous failures")
+        results["visit_tool"] = False
+    
+    # Summary
+    console.print("\n" + "="*70)
+    console.print("[bold cyan]📊 Test Summary[/bold cyan]")
+    console.print("="*70 + "\n")
+    
+    table = Table()
+    table.add_column("Test", style="cyan")
+    table.add_column("Result", style="bold")
+    
+    for test_name, passed in results.items():
+        status = "[green]✓ PASSED[/green]" if passed else "[red]✗ FAILED[/red]"
+        table.add_row(test_name.replace("_", " ").title(), status)
+    
+    console.print(table)
+    
+    # Final verdict
+    all_passed = all(results.values())
+    console.print()
+    
+    if all_passed:
+        console.print(Panel.fit(
+            "[bold green]🎉 All tests passed![/bold green]\n\n"
+            "Your Visit tool is configured correctly and working as expected.\n"
+            "Check the log/ directory for detailed execution logs.",
+            border_style="green",
+            title="Success"
+        ))
+    else:
+        failed_tests = [name for name, passed in results.items() if not passed]
+        console.print(Panel.fit(
+            f"[bold red]❌ Some tests failed[/bold red]\n\n"
+            f"Failed tests: {', '.join(failed_tests)}\n\n"
+            "Please check the error messages above and:\n"
+            "1. Verify your API keys in .env file\n"
+            "2. Check network connectivity\n"
+            "3. Review logs in log/ directory",
+            border_style="red",
+            title="Failure"
+        ))
+    
+    console.print()
+
 
 if __name__ == "__main__":
     main()
-
