@@ -53,6 +53,7 @@ dependencies = [
     "alibabacloud-tea==0.4.3",
     "alibabacloud-tea-openapi==0.4.1",
     "alibabacloud-tea-util==0.3.13",
+    "alibabacloud-aipodcast20250228>=1.0.4",
 ]
 
 [project.optional-dependencies]

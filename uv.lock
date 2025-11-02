@@ -143,6 +143,21 @@ wheels = [
 ]
 
 [[package]]
+name = "alibabacloud-aipodcast20250228"
+version = "1.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alibabacloud-endpoint-util" },
+    { name = "alibabacloud-openapi-util" },
+    { name = "alibabacloud-tea-openapi" },
+    { name = "alibabacloud-tea-util" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/01/b5d694234118d1ab1c51d1244eb549fe90feb95cbee602f3e2d1606bb3de/alibabacloud_aipodcast20250228-1.0.4.tar.gz", hash = "sha256:a82deda4e3fbeeaa48c72e9a77b8e6e568b58912d73257cb0663aea219e8a4c9", size = 7402 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/d9/762b5b0a550a7ce48a838cd87a178345fcea6359432a2630c29f654fcac5/alibabacloud_aipodcast20250228-1.0.4-py3-none-any.whl", hash = "sha256:a465453582051494dc1350a6eca3518eca0b8a4948aa2fe805bccbc095b9720d", size = 6265 },
+]
+
+[[package]]
 name = "alibabacloud-credentials"
 version = "1.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -175,6 +190,12 @@ wheels = [
 ]
 
 [[package]]
+name = "alibabacloud-endpoint-util"
+version = "0.0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/7d/8cc92a95c920e344835b005af6ea45a0db98763ad6ad19299d26892e6c8d/alibabacloud_endpoint_util-0.0.4.tar.gz", hash = "sha256:a593eb8ddd8168d5dc2216cd33111b144f9189fcd6e9ca20e48f358a739bbf90", size = 2813 }
+
+[[package]]
 name = "alibabacloud-gateway-spi"
 version = "0.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -182,6 +203,16 @@ dependencies = [
     { name = "alibabacloud-credentials" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ab/98/d7111245f17935bf72ee9bea60bbbeff2bc42cdfe24d2544db52bc517e1a/alibabacloud_gateway_spi-0.0.3.tar.gz", hash = "sha256:10d1c53a3fc5f87915fbd6b4985b98338a776e9b44a0263f56643c5048223b8b", size = 4249 }
+
+[[package]]
+name = "alibabacloud-openapi-util"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "alibabacloud-tea-util" },
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f6/50/5f41ab550d7874c623f6e992758429802c4b52a6804db437017e5387de33/alibabacloud_openapi_util-0.2.2.tar.gz", hash = "sha256:ebbc3906f554cb4bf8f513e43e8a33e8b6a3d4a0ef13617a0e14c3dda8ef52a8", size = 7201 }
 
 [[package]]
 name = "alibabacloud-tea"
@@ -647,6 +678,7 @@ dependencies = [
     { name = "aiohappyeyeballs" },
     { name = "aiohttp" },
     { name = "aiosignal" },
+    { name = "alibabacloud-aipodcast20250228" },
     { name = "alibabacloud-credentials" },
     { name = "alibabacloud-credentials-api" },
     { name = "alibabacloud-docmind-api20220711" },
@@ -701,6 +733,7 @@ requires-dist = [
     { name = "aiohappyeyeballs", specifier = "==2.6.1" },
     { name = "aiohttp", specifier = "==3.12.15" },
     { name = "aiosignal", specifier = "==1.4.0" },
+    { name = "alibabacloud-aipodcast20250228", specifier = ">=1.0.4" },
     { name = "alibabacloud-credentials", specifier = "==1.0.2" },
     { name = "alibabacloud-credentials", marker = "extra == 'idp'", specifier = ">=1.0.0" },
     { name = "alibabacloud-credentials-api", specifier = "==1.0.0" },
