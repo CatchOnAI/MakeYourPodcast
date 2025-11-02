@@ -66,6 +66,8 @@ class LLMBackend:
                 api_key=os.environ["GEMINI_API_KEY"],
                 model=model_name,
                 max_output_tokens=max_output_tokens,
+                timeout=60,  # Set 60 second timeout for API calls
+                transport="rest",  # Use REST instead of gRPC to avoid SSL issues
                 **common_params,
             )
         else:  # user should set api_key_label from input
