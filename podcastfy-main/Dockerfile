@@ -10,7 +10,9 @@ RUN apt-get update && \
     python3-full \
     python3-pip \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
 
 # Create and activate virtual environment
 RUN python3 -m venv /opt/venv
@@ -22,8 +24,16 @@ RUN python3 -m pip install --upgrade pip
 # Install podcastfy from PyPI
 RUN pip install --no-cache-dir podcastfy
 
+# Create app directory and copy config files
+WORKDIR /app
+COPY podcastfy/config.yaml /opt/venv/lib/python*/site-packages/podcastfy/
+COPY podcastfy/conversation_config.yaml /opt/venv/lib/python*/site-packages/podcastfy/
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 # Verify installations
 RUN echo "Verifying installations:" && \

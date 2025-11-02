@@ -3,7 +3,6 @@ name = "deepresearch-openrouter"
 version = "1.0.0"
 description = "DeepResearch with OpenRouter - No local model deployment needed"
 readme = "README.md"
-requires-python = ">=3.9"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "Qwen Team"}
@@ -17,7 +16,7 @@ dependencies = [
     "qwen-agent>=0.0.26",
     # HTTP & Web
     "requests>=2.32.0",
-    "httpx>=0.28.0",
+    "httpx",
     "aiohttp==3.12.15",
     # CLI & UI
     "rich>=14.0.0",
@@ -54,6 +53,8 @@ dependencies = [
     "alibabacloud-tea-openapi==0.4.1",
     "alibabacloud-tea-util==0.3.13",
     "alibabacloud-aipodcast20250228>=1.0.4",
+    "podcastfy",
+    "playwright>=1.55.0",
 ]
 
 [project.optional-dependencies]
@@ -86,6 +87,9 @@ packages = ["inference"]
 
 [tool.setuptools.package-data]
 inference = ["*.py", "file_tools/*.py"]
+
+[tool.uv.sources]
+podcastfy = { path = "podcastfy-main" }
 
 [project.scripts]
 deepresearch = "inference.run_openrouter:main"
